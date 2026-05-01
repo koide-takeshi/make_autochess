@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mini Suika</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1c2430;
+      --muted: #657085;
+      --paper: #f7f2e8;
+      --panel: #fffaf0;
+      --line: #d5b878;
+      --accent: #2f855a;
+      --danger: #c2413d;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.66), rgba(255,255,255,.2)),
+        radial-gradient(circle at 18% 12%, #f9d978 0 13%, transparent 14%),
+        radial-gradient(circle at 88% 78%, #9ad7b0 0 10%, transparent 11%),
+        var(--paper);
+      color: var(--ink);
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    main {
+      width: min(96vw, 920px);
+      display: grid;
+      grid-template-columns: minmax(300px, 480px) minmax(220px, 1fr);
+      gap: 20px;
+      align-items: start;
+      padding: 20px;
+    }
+
+    .game-shell {
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+    }
+
+    .topbar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 250, 240, .88);
+      box-shadow: 0 10px 24px rgba(81, 61, 25, .12);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 4vw, 2.25rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .score {
+      display: grid;
+      gap: 2px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .score span:first-child {
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    #score {
+      font-size: 1.6rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    canvas {
+      width: min(100%, 440px);
+      aspect-ratio: 11 / 16;
+      display: block;
+      border: 3px solid #a66e38;
+      border-top: 0;
+      border-radius: 0 0 12px 12px;
+      background:
+        linear-gradient(90deg, rgba(166, 110, 56, .12) 0 3px, transparent 3px calc(100% - 3px), rgba(166, 110, 56, .12) calc(100% - 3px)),
+        linear-gradient(180deg, #fffbef 0%, #fff3cf 100%);
+      box-shadow: 0 18px 34px rgba(72, 48, 20, .22);
+      touch-action: none;
+      cursor: pointer;
+    }
+
+    .side {
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel {
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 250, 240, .9);
+      padding: 14px;
+      box-shadow: 0 10px 24px rgba(81, 61, 25, .12);
+    }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      letter-spacing: 0;
+    }
+
+    .preview {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 12px;
+      align-items: center;
+      min-height: 72px;
+    }
+
+    #nextFruit {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 2.1rem;
+      border: 2px solid rgba(0,0,0,.12);
+      box-shadow: inset -8px -10px 0 rgba(0,0,0,.08);
+    }
+
+    .muted {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: .94rem;
+    }
+
+    .controls {
+      display: grid;
+      gap: 8px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: white;
+      background: var(--accent);
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 7px 0 #1f5d3e;
+    }
+
+    button:active {
+      transform: translateY(3px);
+      box-shadow: 0 4px 0 #1f5d3e;
+    }
+
+    kbd {
+      display: inline-block;
+      min-width: 1.7em;
+      padding: 2px 6px;
+      border: 1px solid #c9b077;
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      background: #fffef8;
+      color: var(--ink);
+      font: 700 .82rem ui-monospace, SFMono-Regular, Consolas, monospace;
+      text-align: center;
+    }
+
+    .status {
+      min-height: 1.4em;
+      color: var(--danger);
+      font-weight: 800;
+    }
+
+    @media (max-width: 760px) {
+      body {
+        place-items: start center;
+      }
+
+      main {
+        grid-template-columns: 1fr;
+        padding: 12px;
+      }
+
+      .side {
+        order: -1;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .panel:last-child {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .side {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: end;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="game-shell" aria-label="ゲームエリア">
+      <div class="topbar">
+        <h1>Mini Suika</h1>
+        <div class="score" aria-live="polite">
+          <span>Score</span>
+          <strong id="score">0</strong>
+        </div>
+      </div>
+      <canvas id="game" width="440" height="640" aria-label="スイカゲーム"></canvas>
+    </section>
+
+    <aside class="side">
+      <section class="panel preview">
+        <div id="nextFruit" aria-hidden="true">🍒</div>
+        <div>
+          <h2>次のフルーツ</h2>
+          <p class="muted">左右に動かして、クリックまたはスペースで落とします。</p>
+        </div>
+      </section>
+
+      <section class="panel controls">
+        <button id="restart">リスタート</button>
+        <p id="status" class="status" aria-live="polite"></p>
+      </section>
+
+      <section class="panel">
+        <h2>操作</h2>
+        <p class="muted"><kbd>←</kbd> <kbd>→</kbd> 移動　<kbd>Space</kbd> 落とす<br>同じフルーツが触れると、ひとつ大きなフルーツになります。</p>
+      </section>
+    </aside>
+  </main>
+
+  <script>
+    const canvas = document.querySelector("#game");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.querySelector("#score");
+    const nextFruitEl = document.querySelector("#nextFruit");
+    const statusEl = document.querySelector("#status");
+    const restartButton = document.querySelector("#restart");
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const floorY = H - 14;
+    const wall = 14;
+    const dropY = 62;
+    const dangerY = 96;
+    const gravity = 0.22;
+    const friction = 0.995;
+    const bounce = 0.42;
+
+    const fruits = [
+      { name: "cherry", emoji: "🍒", radius: 15, color: "#e94b5d", score: 1 },
+      { name: "strawberry", emoji: "🍓", radius: 22, color: "#f05a56", score: 3 },
+      { name: "grape", emoji: "🍇", radius: 29, color: "#7f5ac8", score: 6 },
+      { name: "orange", emoji: "🍊", radius: 36, color: "#f59e32", score: 10 },
+      { name: "apple", emoji: "🍎", radius: 45, color: "#d94f43", score: 15 },
+      { name: "pear", emoji: "🍐", radius: 55, color: "#c8d85a", score: 21 },
+      { name: "melon", emoji: "🍈", radius: 66, color: "#8dcf80", score: 28 },
+      { name: "watermelon", emoji: "🍉", radius: 78, color: "#46a75e", score: 36 }
+    ];
+
+    let balls;
+    let nextLevel;
+    let aimX;
+    let score;
+    let canDrop;
+    let over;
+    let lastTime;
+    let nextId;
+
+    function randomLevel() {
+      return Math.floor(Math.random() * 4);
+    }
+
+    function reset() {
+      balls = [];
+      nextLevel = randomLevel();
+      aimX = W / 2;
+      score = 0;
+      canDrop = true;
+      over = false;
+      lastTime = performance.now();
+      nextId = 1;
+      statusEl.textContent = "";
+      updateScore();
+      updatePreview();
+    }
+
+    function updateScore() {
+      scoreEl.textContent = String(score);
+    }
+
+    function updatePreview() {
+      const fruit = fruits[nextLevel];
+      nextFruitEl.textContent = fruit.emoji;
+      nextFruitEl.style.background = fruit.color;
+    }
+
+    function dropFruit() {
+      if (!canDrop || over) return;
+      const fruit = fruits[nextLevel];
+      balls.push({
+        id: nextId++,
+        level: nextLevel,
+        x: clamp(aimX, wall + fruit.radius, W - wall - fruit.radius),
+        y: dropY,
+        vx: 0,
+        vy: 1.2,
+        radius: fruit.radius,
+        merging: false,
+        bornAt: performance.now()
+      });
+      nextLevel = randomLevel();
+      canDrop = false;
+      updatePreview();
+      setTimeout(() => {
+        canDrop = true;
+      }, 430);
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function physicsStep() {
+      for (const ball of balls) {
+        ball.vy += gravity;
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+        ball.vx *= friction;
+
+        if (ball.x - ball.radius < wall) {
+          ball.x = wall + ball.radius;
+          ball.vx = Math.abs(ball.vx) * bounce;
+        }
+        if (ball.x + ball.radius > W - wall) {
+          ball.x = W - wall - ball.radius;
+          ball.vx = -Math.abs(ball.vx) * bounce;
+        }
+        if (ball.y + ball.radius > floorY) {
+          ball.y = floorY - ball.radius;
+          ball.vy = -Math.abs(ball.vy) * bounce;
+          ball.vx *= 0.985;
+          if (Math.abs(ball.vy) < 0.45) ball.vy = 0;
+        }
+      }
+
+      for (let i = 0; i < balls.length; i++) {
+        for (let j = i + 1; j < balls.length; j++) {
+          const a = balls[i];
+          const b = balls[j];
+          if (a.merging || b.merging) continue;
+
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const dist = Math.hypot(dx, dy) || 0.0001;
+          const minDist = a.radius + b.radius;
+
+          if (dist >= minDist) continue;
+
+          if (a.level === b.level && a.level < fruits.length - 1) {
+            merge(a, b);
+            continue;
+          }
+
+          const nx = dx / dist;
+          const ny = dy / dist;
+          const overlap = minDist - dist;
+          const push = overlap * 0.5;
+          a.x -= nx * push;
+          a.y -= ny * push;
+          b.x += nx * push;
+          b.y += ny * push;
+
+          const relative = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+          if (relative < 0) {
+            const impulse = relative * -0.54;
+            a.vx -= impulse * nx;
+            a.vy -= impulse * ny;
+            b.vx += impulse * nx;
+            b.vy += impulse * ny;
+          }
+        }
+      }
+    }
+
+    function merge(a, b) {
+      a.merging = true;
+      b.merging = true;
+      const next = fruits[a.level + 1];
+      const merged = {
+        id: nextId++,
+        level: a.level + 1,
+        x: (a.x + b.x) / 2,
+        y: (a.y + b.y) / 2,
+        vx: (a.vx + b.vx) * 0.25,
+        vy: (a.vy + b.vy) * 0.25 - 1.4,
+        radius: next.radius,
+        merging: false,
+        bornAt: performance.now()
+      };
+      balls = balls.filter((ball) => ball !== a && ball !== b);
+      balls.push(merged);
+      score += next.score;
+      updateScore();
+    }
+
+    function checkGameOver(now) {
+      if (over) return;
+      const settledAboveLine = balls.some((ball) => {
+        const oldEnough = now - ball.bornAt > 1800;
+        const slow = Math.abs(ball.vx) + Math.abs(ball.vy) < 1.2;
+        return oldEnough && slow && ball.y - ball.radius < dangerY;
+      });
+      if (settledAboveLine) {
+        over = true;
+        statusEl.textContent = "ゲームオーバー";
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(194, 65, 61, .72)";
+      ctx.setLineDash([8, 8]);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(wall + 6, dangerY);
+      ctx.lineTo(W - wall - 6, dangerY);
+      ctx.stroke();
+      ctx.restore();
+
+      if (!over) {
+        const ghost = fruits[nextLevel];
+        const x = clamp(aimX, wall + ghost.radius, W - wall - ghost.radius);
+        drawFruit(x, dropY, ghost.radius, nextLevel, nextLevel, 0.38);
+        ctx.fillStyle = "rgba(28, 36, 48, .34)";
+        ctx.fillRect(x - 1, dropY - 38, 2, 34);
+      }
+
+      for (const ball of balls) {
+        drawFruit(ball.x, ball.y, ball.radius, ball.level, ball.level, 1);
+      }
+    }
+
+    function drawFruit(x, y, radius, textLevel, colorLevel, alpha) {
+      const fruit = fruits[colorLevel];
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      const gradient = ctx.createRadialGradient(x - radius * 0.35, y - radius * 0.4, radius * 0.2, x, y, radius);
+      gradient.addColorStop(0, "#fff8dc");
+      gradient.addColorStop(0.18, fruit.color);
+      gradient.addColorStop(1, shade(fruit.color, -22));
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(48, 43, 32, .22)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.font = `${Math.max(18, radius * 1.08)}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(fruits[textLevel].emoji, x, y + radius * 0.05);
+      ctx.restore();
+    }
+
+    function shade(hex, percent) {
+      const n = Number.parseInt(hex.slice(1), 16);
+      const amt = Math.round(2.55 * percent);
+      const r = clamp((n >> 16) + amt, 0, 255);
+      const g = clamp(((n >> 8) & 255) + amt, 0, 255);
+      const b = clamp((n & 255) + amt, 0, 255);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function loop(now) {
+      const delta = Math.min(32, now - lastTime);
+      lastTime = now;
+      const steps = Math.max(1, Math.round(delta / 16));
+      for (let i = 0; i < steps; i++) physicsStep();
+      checkGameOver(now);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    canvas.addEventListener("pointermove", (event) => {
+      const rect = canvas.getBoundingClientRect();
+      aimX = ((event.clientX - rect.left) / rect.width) * W;
+    });
+
+    canvas.addEventListener("pointerdown", (event) => {
+      const rect = canvas.getBoundingClientRect();
+      aimX = ((event.clientX - rect.left) / rect.width) * W;
+      dropFruit();
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft") {
+        aimX -= 18;
+        event.preventDefault();
+      }
+      if (event.key === "ArrowRight") {
+        aimX += 18;
+        event.preventDefault();
+      }
+      if (event.code === "Space") {
+        dropFruit();
+        event.preventDefault();
+      }
+      aimX = clamp(aimX, wall + 15, W - wall - 15);
+    });
+
+    restartButton.addEventListener("click", reset);
+
+    reset();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
