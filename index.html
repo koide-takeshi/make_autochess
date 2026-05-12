@@ -3,17 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mini Suika</title>
+  <title>ウミウシAutoChess</title>
   <style>
     :root {
-      color-scheme: light;
-      --ink: #1c2430;
-      --muted: #657085;
-      --paper: #f7f2e8;
-      --panel: #fffaf0;
-      --line: #d5b878;
-      --accent: #2f855a;
-      --danger: #c2413d;
+      color-scheme: dark;
+      --bg: #151812;
+      --ink: #f4f1e7;
+      --muted: #aeb4a4;
+      --line: #3b4938;
+      --panel: #20261d;
+      --panel-2: #293126;
+      --cell: #303a2b;
+      --accent: #d5a94a;
+      --blue: #69a7d8;
+      --red: #df7069;
+      --green: #7fb06b;
     }
 
     * {
@@ -23,525 +27,2175 @@
     body {
       margin: 0;
       min-height: 100vh;
-      display: grid;
-      place-items: center;
+      overflow: hidden;
       background:
-        linear-gradient(180deg, rgba(255,255,255,.66), rgba(255,255,255,.2)),
-        radial-gradient(circle at 18% 12%, #f9d978 0 13%, transparent 14%),
-        radial-gradient(circle at 88% 78%, #9ad7b0 0 10%, transparent 11%),
-        var(--paper);
+        linear-gradient(180deg, rgba(255, 255, 255, .04), transparent 22%),
+        radial-gradient(circle at 12% 14%, rgba(213, 169, 74, .22), transparent 22%),
+        radial-gradient(circle at 86% 8%, rgba(105, 167, 216, .18), transparent 20%),
+        var(--bg);
       color: var(--ink);
       font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     main {
-      width: min(96vw, 920px);
+      width: min(1180px, 100%);
+      height: 100vh;
+      margin: 0 auto;
       display: grid;
-      grid-template-columns: minmax(300px, 480px) minmax(220px, 1fr);
-      gap: 20px;
-      align-items: start;
-      padding: 20px;
+      grid-template-columns: minmax(260px, 1fr) 310px;
+      gap: 10px;
+      padding: 10px;
+      overflow: hidden;
     }
 
-    .game-shell {
+    .field {
       display: grid;
-      gap: 12px;
-      justify-items: center;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 10px;
+      min-width: 0;
+      min-height: 0;
     }
 
-    .topbar {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      border: 2px solid var(--line);
+    header,
+    .shop,
+    .roster,
+    .stage-panel {
+      border: 1px solid var(--line);
       border-radius: 8px;
-      background: rgba(255, 250, 240, .88);
-      box-shadow: 0 10px 24px rgba(81, 61, 25, .12);
+      background: rgba(32, 38, 29, .92);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, .18);
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+    }
+
+    .title-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .title-area h1 {
+      flex: 0 1 auto;
     }
 
     h1 {
       margin: 0;
-      font-size: clamp(1.6rem, 4vw, 2.25rem);
-      line-height: 1;
+      font-size: clamp(1.22rem, 2.4vw, 1.8rem);
       letter-spacing: 0;
+      line-height: 1;
     }
 
-    .score {
-      display: grid;
-      gap: 2px;
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .stat {
+      min-width: 74px;
+      padding: 6px 8px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .04);
       text-align: right;
-      white-space: nowrap;
     }
 
-    .score span:first-child {
+    .stat b {
+      display: block;
       color: var(--muted);
-      font-size: .78rem;
+      font-size: .72rem;
       font-weight: 700;
-      text-transform: uppercase;
     }
 
-    #score {
-      font-size: 1.6rem;
-      font-weight: 800;
+    .stat span {
+      font-size: 1rem;
+      font-weight: 900;
       font-variant-numeric: tabular-nums;
     }
 
-    canvas {
-      width: min(100%, 440px);
-      aspect-ratio: 11 / 16;
-      display: block;
-      border: 3px solid #a66e38;
-      border-top: 0;
-      border-radius: 0 0 12px 12px;
+    .board-wrap {
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      place-items: center;
+      gap: 8px;
+      min-height: 0;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
       background:
-        linear-gradient(90deg, rgba(166, 110, 56, .12) 0 3px, transparent 3px calc(100% - 3px), rgba(166, 110, 56, .12) calc(100% - 3px)),
-        linear-gradient(180deg, #fffbef 0%, #fff3cf 100%);
-      box-shadow: 0 18px 34px rgba(72, 48, 20, .22);
-      touch-action: none;
+        linear-gradient(180deg, rgba(10, 18, 20, .16), rgba(5, 10, 9, .32)),
+        url("assets/field-temple-portrait.png") 56% 82% / cover no-repeat,
+        #1a2017;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .board-layer {
+      width: min(100%, 720px, calc((100vh - 178px) * 1.2));
+      aspect-ratio: 6 / 5;
+      position: relative;
+    }
+
+    .board {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-template-rows: repeat(5, 1fr);
+      gap: 7px;
+      padding: 7px;
+      border: 2px solid #4f6747;
+      border-radius: 8px;
+      background: #12170f;
+      position: relative;
+    }
+
+    .bench-area {
+      width: min(100%, 620px);
+      display: grid;
+      grid-template-columns: minmax(84px, 104px) minmax(0, 1fr) 82px;
+      align-items: stretch;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .bench-sell {
+      display: grid;
+      place-items: center;
+    }
+
+    .bench-sell button {
+      width: 66px;
+      height: 66px;
+      padding: 6px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .06);
+      color: rgba(244, 241, 231, .42);
+      border: 1px solid rgba(255, 255, 255, .12);
+      line-height: 1.2;
+      font-size: .78rem;
+    }
+
+    .bench-sell button.ready {
+      background: var(--accent);
+      color: #17140b;
+      border-color: transparent;
+    }
+
+    .matchup-chart {
+      display: grid;
+      align-content: center;
+      gap: 5px;
+      padding: 7px;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 8px;
+      background: rgba(10, 13, 9, .5);
+      color: var(--muted);
+      font-size: .68rem;
+      font-weight: 900;
+    }
+
+    .matchup-title {
+      color: #ffe39a;
+      text-align: center;
+      font-size: .72rem;
+    }
+
+    .matchup-row {
+      display: grid;
+      grid-template-columns: 20px 1fr 20px;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+    }
+
+    .matchup-row img {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+    }
+
+    .bench {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      padding: 7px;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 8px;
+      background: rgba(10, 13, 9, .5);
+    }
+
+    .bench-slot {
+      position: relative;
+      min-width: 0;
+      padding: 0;
+      aspect-ratio: 1;
+      border: 1px dashed rgba(255, 255, 255, .18);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, .04);
       cursor: pointer;
+    }
+
+    .bench-slot.selected {
+      outline: 3px solid var(--accent);
+      outline-offset: -3px;
+    }
+
+    .bench-slot.empty::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: rgba(244, 241, 231, .4);
+      font-size: .72rem;
+      font-weight: 900;
+    }
+
+    .bench-slot .unit {
+      inset: 9%;
+      font-size: 1.35rem;
+    }
+
+    .bench-slot .slug-piece {
+      inset: 8%;
+    }
+
+    .clear-banner {
+      position: absolute;
+      inset: 50% auto auto 50%;
+      transform: translate(-50%, -50%);
+      width: min(92%, 560px);
+      display: none;
+      place-items: center;
+      padding: 12px;
+      border: 1px solid rgba(213, 169, 74, .62);
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(213, 169, 74, .32), rgba(105, 167, 216, .18)),
+        rgba(18, 23, 15, .92);
+      color: #ffe39a;
+      font-size: clamp(2rem, 7vw, 4.8rem);
+      font-weight: 1000;
+      line-height: 1;
+      text-align: center;
+      text-transform: uppercase;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .42);
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .clear-banner.show {
+      display: grid;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .clear-banner.reward-mode {
+      width: min(94%, 728px);
+    }
+
+    .reward-image {
+      width: 100%;
+      max-height: min(83vh, 611px);
+      display: block;
+      border: 2px solid rgba(255, 227, 154, .72);
+      border-radius: 8px;
+      object-fit: contain;
+      background: rgba(244, 241, 231, .08);
+    }
+
+    .enemy-preview {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(86%, 580px);
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 7px 9px;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 999px;
+      background: rgba(15, 18, 13, .58);
+      backdrop-filter: blur(5px);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .enemy-preview:empty {
+      display: none;
+    }
+
+    .enemy-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 82px;
+      justify-content: center;
+      padding: 4px 7px;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .08);
+      color: var(--ink);
+      font-size: .84rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .enemy-chip .weak {
+      padding: 1px 5px;
+      border-radius: 999px;
+      background: rgba(213, 169, 74, .16);
+      color: #ffe39a;
+      font-size: .72rem;
+      font-weight: 900;
+    }
+
+    .enemy-chip.label {
+      min-width: auto;
+      background: transparent;
+      border-color: transparent;
+      color: #ffe39a;
+      letter-spacing: 0;
+    }
+
+    .enemy-chip i {
+      position: relative;
+      width: 22px;
+      height: 22px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 50%;
+      background: radial-gradient(circle at 34% 24%, rgba(255, 255, 255, .62), var(--tone) 42%, rgba(0, 0, 0, .25));
+      font-style: normal;
+    }
+
+    .enemy-chip-art {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      transform: scale(1.55);
+    }
+
+    .enemy-chip .element-badge {
+      top: -6px;
+      right: -6px;
+      width: 12px;
+    }
+
+    .cell {
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 6px;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, .05), transparent),
+        var(--cell);
+      overflow: hidden;
+      cursor: pointer;
+      touch-action: none;
+    }
+
+    .cell.enemy-row {
+      background:
+        linear-gradient(135deg, rgba(223, 112, 105, .13), transparent),
+        #352927;
+    }
+
+    .cell.player-row {
+      background:
+        linear-gradient(135deg, rgba(105, 167, 216, .15), transparent),
+        #243429;
+    }
+
+    .cell.selected {
+      outline: 3px solid var(--accent);
+      outline-offset: -3px;
+    }
+
+    .unit {
+      position: absolute;
+      inset: 7%;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, .2);
+      background: radial-gradient(circle at 34% 24%, rgba(255, 255, 255, .65), var(--tone) 34%, rgba(0, 0, 0, .28));
+      box-shadow: inset -9px -12px 0 rgba(0, 0, 0, .18), 0 8px 12px rgba(0, 0, 0, .22);
+      font-size: clamp(1.45rem, 4.2vw, 2.5rem);
+      transform: translate(var(--tx, 0), var(--ty, 0)) scale(var(--scale, 1));
+      transition: transform .18s ease, filter .18s ease;
+      pointer-events: none;
+    }
+
+    .unit.hit {
+      --scale: .88;
+      filter: brightness(1.55);
+    }
+
+    .unit.enemy {
+      --tone: var(--red);
+    }
+
+    .unit.player {
+      --tone: var(--blue);
+    }
+
+    .slug-piece {
+      position: absolute;
+      inset: 9%;
+      display: block;
+    }
+
+    .slug-body {
+      position: absolute;
+      left: 8%;
+      right: 6%;
+      bottom: 18%;
+      height: 54%;
+      border-radius: 58% 46% 50% 46% / 64% 58% 44% 44%;
+      background:
+        radial-gradient(circle at 28% 28%, rgba(255, 255, 255, .78), transparent 15%),
+        radial-gradient(circle at 71% 36%, rgba(255, 255, 255, .3), transparent 12%),
+        linear-gradient(135deg, rgba(255, 255, 255, .36), var(--tone) 42%, rgba(0, 0, 0, .2));
+      box-shadow: inset -8px -9px 0 rgba(0, 0, 0, .18);
+    }
+
+    .slug-body::before,
+    .slug-body::after {
+      content: "";
+      position: absolute;
+      top: -17%;
+      width: 18%;
+      height: 34%;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .48), var(--tone));
+      box-shadow: inset -2px -3px 0 rgba(0, 0, 0, .15);
+    }
+
+    .slug-body::before {
+      left: 17%;
+      transform: rotate(-18deg);
+    }
+
+    .slug-body::after {
+      left: 38%;
+      transform: rotate(15deg);
+    }
+
+    .slug-eye {
+      position: absolute;
+      top: 33%;
+      width: 7%;
+      height: 7%;
+      border-radius: 50%;
+      background: #11180f;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, .38);
+      z-index: 2;
+    }
+
+    .slug-eye.left {
+      left: 31%;
+    }
+
+    .slug-eye.right {
+      left: 48%;
+    }
+
+    .slug-gear {
+      position: absolute;
+      z-index: 3;
+      display: grid;
+      place-items: center;
+      color: #12170f;
+      font-weight: 1000;
+      line-height: 1;
+    }
+
+    .slug-piece.guard .slug-gear {
+      right: 1%;
+      bottom: 22%;
+      width: 30%;
+      height: 36%;
+      border: 2px solid rgba(255, 255, 255, .72);
+      border-radius: 42% 42% 52% 52%;
+      background: linear-gradient(180deg, #e5edf0, #8aa0a7);
+      font-size: .78em;
+    }
+
+    .slug-piece.guard .slug-gear::before {
+      content: "盾";
+    }
+
+    .slug-piece.blade .slug-gear {
+      right: 0;
+      top: 11%;
+      width: 39%;
+      height: 11%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #f4f1e7, #c5ccd1);
+      transform: rotate(-38deg);
+      box-shadow: -8px 0 0 #9d6b40;
+    }
+
+    .slug-piece.mage .slug-gear {
+      right: 2%;
+      top: 6%;
+      width: 28%;
+      height: 28%;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fff9c9 0 22%, #b684d8 48%, rgba(182, 132, 216, .12) 70%);
+      box-shadow: 0 0 10px rgba(255, 249, 201, .8);
+    }
+
+    .slug-piece.archer .slug-gear {
+      right: -2%;
+      top: 18%;
+      width: 32%;
+      height: 45%;
+      border: 3px solid #f3d991;
+      border-left-color: transparent;
+      border-radius: 50%;
+      transform: rotate(10deg);
+    }
+
+    .slug-piece.archer .slug-gear::after {
+      content: "";
+      position: absolute;
+      left: 43%;
+      top: -7%;
+      width: 2px;
+      height: 112%;
+      background: rgba(244, 241, 231, .82);
+    }
+
+    .slug-star {
+      position: absolute;
+      left: 7%;
+      top: 5%;
+      padding: 1px 4px;
+      border-radius: 999px;
+      background: rgba(18, 23, 15, .68);
+      color: #ffe39a;
+      font-size: .44em;
+      font-weight: 1000;
+      z-index: 4;
+    }
+
+    .unit-art {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      filter: drop-shadow(0 7px 5px rgba(0, 0, 0, .24));
+    }
+
+    .unit .unit-art {
+      transform: scale(1.18);
+    }
+
+    .unit.enemy .unit-art {
+      transform: scale(1.24);
+    }
+
+    .avatar .unit-art {
+      transform: scale(1.28);
+    }
+
+    .art-star {
+      position: absolute;
+      left: 6%;
+      top: 4%;
+      padding: 1px 5px;
+      border-radius: 999px;
+      background: rgba(18, 23, 15, .72);
+      color: #ffe39a;
+      font-size: .62rem;
+      font-weight: 1000;
+      z-index: 2;
+    }
+
+    .element-badge {
+      position: absolute;
+      top: -5%;
+      right: -5%;
+      width: 28%;
+      aspect-ratio: 1;
+      display: block;
+      border-radius: 50%;
+      background: rgba(13, 16, 11, .72);
+      box-shadow: 0 2px 7px rgba(0, 0, 0, .32);
+      z-index: 5;
+    }
+
+    .element-badge img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    .avatar .element-badge {
+      top: -4px;
+      right: -4px;
+      width: 17px;
+    }
+
+    .hp {
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      bottom: 7%;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, .45);
+      overflow: hidden;
+    }
+
+    .hp i {
+      display: block;
+      width: calc(var(--hp) * 1%);
+      height: 100%;
+      background: linear-gradient(90deg, #d94d45, #e8c04d, #83c36e);
+    }
+
+    .level-up-pop {
+      position: absolute;
+      left: 50%;
+      top: 5%;
+      z-index: 8;
+      transform: translateX(-50%);
+      padding: 2px 7px;
+      border: 1px solid rgba(68, 46, 8, .22);
+      border-radius: 999px;
+      background: rgba(255, 229, 142, .96);
+      color: #1c170b;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, .24);
+      font-size: .66rem;
+      font-weight: 1000;
+      line-height: 1.15;
+      white-space: nowrap;
+      pointer-events: none;
+      animation: levelUpPop 1.35s ease-out forwards;
+    }
+
+    @keyframes levelUpPop {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, 8px) scale(.82);
+      }
+      14%,
+      72% {
+        opacity: 1;
+        transform: translate(-50%, -2px) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -10px) scale(.96);
+      }
     }
 
     .side {
       display: grid;
-      gap: 14px;
+      grid-template-rows: auto minmax(210px, .76fr) minmax(0, 1.24fr);
+      gap: 10px;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
     }
 
-    .panel {
-      border: 2px solid var(--line);
-      border-radius: 8px;
-      background: rgba(255, 250, 240, .9);
-      padding: 14px;
-      box-shadow: 0 10px 24px rgba(81, 61, 25, .12);
+    .stage-panel,
+    .shop,
+    .roster {
+      padding: 10px;
+      min-height: 0;
+      overflow: hidden;
     }
 
-    .panel h2 {
-      margin: 0 0 10px;
-      font-size: 1rem;
-      letter-spacing: 0;
-    }
-
-    .preview {
+    .shop,
+    .roster {
       display: grid;
-      grid-template-columns: 72px 1fr;
-      gap: 12px;
-      align-items: center;
-      min-height: 72px;
+      grid-template-rows: auto minmax(0, 1fr);
     }
 
-    #nextFruit {
-      width: 68px;
-      height: 68px;
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      min-height: 24px;
+    }
+
+    .title-badges {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .title-badges #restartButton {
+      min-width: 74px;
+      padding: 5px 7px;
+      border-radius: 6px;
+      font-size: .72rem;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .stage-panel .section-title {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stage-panel .section-heading {
+      justify-content: flex-start;
+    }
+
+    .section-heading {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .help-button {
+      width: 24px;
+      height: 24px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0;
       border-radius: 50%;
+      background: rgba(213, 169, 74, .16);
+      color: #ffe39a;
+      border: 1px solid rgba(213, 169, 74, .36);
+      font-size: .72rem;
+      line-height: 1;
+    }
+
+    .help-button:hover,
+    .help-button:focus-visible {
+      background: rgba(213, 169, 74, .32);
+      outline: 2px solid rgba(255, 227, 154, .34);
+      outline-offset: 2px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: .98rem;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .badge {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(213, 169, 74, .15);
+      color: #f3d991;
+      font-size: .78rem;
+      font-weight: 800;
+    }
+
+    .stage-track {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    .stage-info {
+      display: grid;
+      gap: 6px;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: .76rem;
+      line-height: 1.35;
+    }
+
+    .stage-info strong {
+      color: var(--ink);
+    }
+
+    .stage-warning {
+      display: none;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(92%, 520px);
+      padding: 7px 10px;
+      border: 1px solid rgba(223, 112, 105, .4);
+      border-radius: 6px;
+      background: rgba(57, 24, 24, .84);
+      color: #ffb8b3;
+      font-weight: 900;
+      text-align: center;
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .stage-warning.show {
+      display: block;
+    }
+
+    .boost-pill {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(213, 169, 74, .15);
+      color: #ffe39a;
+      font-weight: 900;
+    }
+
+    .stage-dot {
+      height: 8px;
+      border-radius: 999px;
+      background: #384132;
+    }
+
+    .stage-dot.done {
+      background: var(--accent);
+    }
+
+    .stage-dot.current {
+      background: var(--blue);
+    }
+
+    .shop-list,
+    .roster-list {
+      display: grid;
+      gap: 6px;
+      align-content: start;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .shop-list {
+      grid-auto-rows: minmax(52px, auto);
+      overflow: hidden;
+    }
+
+    .roster-list {
+      grid-auto-rows: minmax(54px, auto);
+    }
+
+    .piece-row {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr) auto auto;
+      gap: 7px;
+      align-items: center;
+      min-height: 44px;
+      padding: 6px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .04);
+    }
+
+    .shop .piece-row {
+      min-height: 52px;
+    }
+
+    .piece-row.roster-row {
+      grid-template-columns: 42px minmax(0, 1fr) 78px;
+      min-height: 54px;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
       display: grid;
       place-items: center;
-      font-size: 2.1rem;
-      border: 2px solid rgba(0,0,0,.12);
-      box-shadow: inset -8px -10px 0 rgba(0,0,0,.08);
+      border-radius: 50%;
+      background: radial-gradient(circle at 34% 24%, #fff7, var(--tone) 40%, #0005);
+      font-size: 1.2rem;
+      box-shadow: inset -5px -7px 0 rgba(0, 0, 0, .18);
     }
 
-    .muted {
-      margin: 0;
+    .avatar.slug-avatar {
+      position: relative;
+      overflow: hidden;
+      font-size: .72rem;
+    }
+
+    .avatar.slug-avatar .slug-piece {
+      inset: 5%;
+    }
+
+    .piece-row strong {
+      display: block;
+      line-height: 1.2;
+    }
+
+    .piece-row small {
+      display: block;
       color: var(--muted);
-      line-height: 1.55;
-      font-size: .94rem;
+      font-size: .78rem;
+      line-height: 1.25;
     }
 
-    .controls {
+    .damage-pill {
+      display: inline-grid;
+      min-width: 0;
+      padding: 3px 6px;
+      border: 1px solid rgba(213, 169, 74, .28);
+      border-radius: 999px;
+      background: rgba(213, 169, 74, .13);
+      color: #ffe39a;
+      font-size: .75rem;
+      font-weight: 900;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    button.damage-pill {
+      cursor: pointer;
+    }
+
+    button.damage-pill:hover:not(:disabled),
+    button.damage-pill:focus-visible:not(:disabled) {
+      background: rgba(213, 169, 74, .28);
+      outline: 2px solid rgba(255, 227, 154, .24);
+      outline-offset: 1px;
+    }
+
+    button.damage-pill:disabled {
+      cursor: default;
+      opacity: .58;
+    }
+
+    .unit-metrics {
       display: grid;
-      gap: 8px;
+      gap: 4px;
+      align-items: center;
+      justify-items: stretch;
+    }
+
+    .element-pill {
+      color: #d8decf;
+      font-weight: 800;
     }
 
     button {
       appearance: none;
       border: 0;
       border-radius: 8px;
-      padding: 12px 14px;
-      color: white;
+      padding: 8px 9px;
       background: var(--accent);
+      color: #17140b;
       font: inherit;
-      font-weight: 800;
+      font-weight: 900;
       cursor: pointer;
-      box-shadow: 0 7px 0 #1f5d3e;
     }
 
-    button:active {
-      transform: translateY(3px);
-      box-shadow: 0 4px 0 #1f5d3e;
+    button:disabled {
+      cursor: default;
+      opacity: .44;
     }
 
-    kbd {
-      display: inline-block;
-      min-width: 1.7em;
-      padding: 2px 6px;
-      border: 1px solid #c9b077;
-      border-bottom-width: 2px;
-      border-radius: 5px;
-      background: #fffef8;
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .actions button:first-child {
+      min-height: 42px;
+      background: var(--green);
+      color: #081208;
+    }
+
+    .ghost {
+      background: transparent;
       color: var(--ink);
-      font: 700 .82rem ui-monospace, SFMono-Regular, Consolas, monospace;
-      text-align: center;
+      border: 1px solid rgba(255, 255, 255, .16);
     }
 
-    .status {
-      min-height: 1.4em;
-      color: var(--danger);
-      font-weight: 800;
+    .help-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 18px;
+      background: rgba(5, 9, 7, .62);
+      z-index: 20;
     }
 
-    @media (max-width: 760px) {
+    .help-modal.show {
+      display: grid;
+    }
+
+    .help-panel {
+      width: min(560px, 100%);
+      max-height: min(86vh, 660px);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid rgba(213, 169, 74, .36);
+      border-radius: 8px;
+      background: rgba(26, 32, 24, .98);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, .52);
+    }
+
+    .help-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .help-header h3 {
+      margin: 0;
+      font-size: 1.04rem;
+    }
+
+    .help-close {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .06);
+      color: var(--ink);
+      border: 1px solid rgba(255, 255, 255, .14);
+      line-height: 1;
+    }
+
+    .help-content {
+      display: grid;
+      gap: 12px;
+      overflow: auto;
+      padding-right: 4px;
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.55;
+    }
+
+    .help-content section {
+      display: grid;
+      gap: 4px;
+      padding: 9px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .035);
+    }
+
+    .help-content h4 {
+      margin: 0;
+      color: #ffe39a;
+      font-size: .92rem;
+    }
+
+    .help-content p {
+      margin: 0;
+    }
+
+    @media (max-width: 560px) {
       body {
-        place-items: start center;
+        overflow: auto;
       }
 
       main {
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
         grid-template-columns: 1fr;
-        padding: 12px;
       }
 
       .side {
-        order: -1;
         grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto;
+        overflow: visible;
       }
 
-      .panel:last-child {
+      .roster {
         grid-column: 1 / -1;
       }
     }
 
-    @media (max-width: 480px) {
+    @media (max-width: 420px) {
+      main {
+        padding: 10px;
+      }
+
+      header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .stats {
+        width: 100%;
+        justify-content: stretch;
+      }
+
+      .stat {
+        flex: 1;
+        text-align: left;
+      }
+
       .side {
         grid-template-columns: 1fr;
       }
 
-      .topbar {
-        align-items: end;
+      .board-wrap {
+        min-height: 330px;
+        padding: 7px;
+      }
+
+      .board {
+        gap: 5px;
+        padding: 5px;
+      }
+
+      .bench-area {
+        grid-template-columns: 1fr;
+      }
+
+      .bench-sell button {
+        width: 58px;
+        height: 58px;
+      }
+
+      .matchup-chart {
+        grid-template-columns: auto auto auto;
+        justify-content: center;
+      }
+
+      .matchup-title {
+        grid-column: 1 / -1;
       }
     }
   </style>
 </head>
 <body>
   <main>
-    <section class="game-shell" aria-label="ゲームエリア">
-      <div class="topbar">
-        <h1>Mini Suika</h1>
-        <div class="score" aria-live="polite">
-          <span>Score</span>
-          <strong id="score">0</strong>
+    <section class="field" aria-label="戦場">
+      <header>
+        <div class="title-area">
+          <h1>ウミウシAutoChess</h1>
+        </div>
+        <div class="stats">
+          <div class="stat"><b>ステージ</b><span id="stageCount">1/5</span></div>
+          <div class="stat"><b>ゴールド</b><span id="gold">8</span></div>
+          <div class="stat"><b>ライフ</b><span id="life">3</span></div>
+        </div>
+      </header>
+
+      <div class="board-wrap">
+        <div class="enemy-preview" id="enemyPreview"></div>
+        <div class="board-layer">
+          <div class="board" id="board"></div>
+          <div class="stage-warning" id="stageWarning">戦闘に参加できる駒は最大６体です</div>
+          <div class="clear-banner" id="clearBanner">Stage Clear!</div>
+        </div>
+        <div class="bench-area">
+          <div class="matchup-chart" aria-label="属性相性">
+            <div class="matchup-title">属性相性</div>
+            <div class="matchup-row"><img src="assets/elements/flame.png" alt="炎"><span>炎 &gt; 森</span><img src="assets/elements/grove.png" alt="森"></div>
+            <div class="matchup-row"><img src="assets/elements/grove.png" alt="森"><span>森 &gt; 土</span><img src="assets/elements/earth.png" alt="土"></div>
+            <div class="matchup-row"><img src="assets/elements/earth.png" alt="土"><span>土 &gt; 水</span><img src="assets/elements/water.png" alt="水"></div>
+            <div class="matchup-row"><img src="assets/elements/water.png" alt="水"><span>水 &gt; 炎</span><img src="assets/elements/flame.png" alt="炎"></div>
+          </div>
+          <div class="bench" id="bench"></div>
+          <div class="bench-sell"><button id="sellButton" disabled>売却</button></div>
         </div>
       </div>
-      <canvas id="game" width="440" height="640" aria-label="スイカゲーム"></canvas>
     </section>
 
     <aside class="side">
-      <section class="panel preview">
-        <div id="nextFruit" aria-hidden="true">🍒</div>
-        <div>
-          <h2>次のフルーツ</h2>
-          <p class="muted">左右に動かして、クリックまたはスペースで落とします。</p>
+      <section class="stage-panel">
+        <div class="section-title">
+          <div class="section-heading">
+            <h2>遊び方説明</h2>
+            <button class="help-button" id="helpButton" aria-label="遊び方を開く" title="遊び方">?</button>
+          </div>
+          <span class="title-badges">
+            <span class="badge" id="phase">準備</span>
+            <span class="badge" id="roundTime">0.0s</span>
+            <button class="ghost" id="restartButton">Give up</button>
+          </span>
+        </div>
+        <div class="stage-track" id="stageTrack"></div>
+        <div class="stage-info">
+          <div id="stageBoost"></div>
+        </div>
+        <div class="actions">
+          <button id="battleButton">戦闘開始</button>
+          <button class="ghost" id="gachaButton">ガチャ 6/6</button>
         </div>
       </section>
 
-      <section class="panel controls">
-        <button id="restart">リスタート</button>
-        <p id="status" class="status" aria-live="polite"></p>
+      <section class="shop">
+        <div class="section-title">
+          <h2>駒を買う</h2>
+          <span class="badge">購入 ★1 3G / ★2 4G</span>
+        </div>
+        <div class="shop-list" id="shop"></div>
       </section>
 
-      <section class="panel">
-        <h2>操作</h2>
-        <p class="muted"><kbd>←</kbd> <kbd>→</kbd> 移動　<kbd>Space</kbd> 落とす<br>同じフルーツが触れると、ひとつ大きなフルーツになります。</p>
+      <section class="roster">
+        <div class="section-title">
+          <h2>部隊</h2>
+          <span class="badge" id="unitCount">0/6</span>
+        </div>
+        <div class="roster-list" id="roster"></div>
       </section>
     </aside>
   </main>
 
+  <div class="help-modal" id="helpModal" aria-hidden="true">
+    <div class="help-panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <div class="help-header">
+        <h3 id="helpTitle">遊び方</h3>
+        <button class="help-close" id="helpClose" aria-label="説明を閉じる">×</button>
+      </div>
+      <div class="help-content">
+        <section>
+          <h4>まずやること</h4>
+          <p>「駒を買う」から駒を雇い、控えや盤面の駒をクリックして配置します。準備ができたら「戦闘開始」を押すと、自動で戦います。</p>
+        </section>
+        <section>
+          <h4>戦力を整える</h4>
+          <p>ガチャを回して候補を更新し、いらない駒は売却します。同じ駒を盤面に3体並べるとレベルアップし、強くなります。</p>
+        </section>
+        <section>
+          <h4>配置と相性</h4>
+          <p>戦闘に参加できる駒は最大6体です。盾役、近距離、中距離、遠距離の役割と、炎・森・土・水の相性を見て配置を考えます。</p>
+        </section>
+        <section>
+          <h4>報酬とやり直し</h4>
+          <p>戦闘後は勝っても負けてもゴールドを獲得します。負けた後も敵の属性は変わらないので、ガチャや売却で対策して再挑戦できます。</p>
+        </section>
+      </div>
+    </div>
+  </div>
+
   <script>
-    const canvas = document.querySelector("#game");
-    const ctx = canvas.getContext("2d");
-    const scoreEl = document.querySelector("#score");
-    const nextFruitEl = document.querySelector("#nextFruit");
-    const statusEl = document.querySelector("#status");
-    const restartButton = document.querySelector("#restart");
-
-    const W = canvas.width;
-    const H = canvas.height;
-    const floorY = H - 14;
-    const wall = 14;
-    const dropY = 62;
-    const dangerY = 96;
-    const gravity = 0.22;
-    const friction = 0.995;
-    const bounce = 0.42;
-
-    const fruits = [
-      { name: "cherry", emoji: "🍒", radius: 15, color: "#e94b5d", score: 1 },
-      { name: "strawberry", emoji: "🍓", radius: 22, color: "#f05a56", score: 3 },
-      { name: "grape", emoji: "🍇", radius: 29, color: "#7f5ac8", score: 6 },
-      { name: "orange", emoji: "🍊", radius: 36, color: "#f59e32", score: 10 },
-      { name: "apple", emoji: "🍎", radius: 45, color: "#d94f43", score: 15 },
-      { name: "pear", emoji: "🍐", radius: 55, color: "#c8d85a", score: 21 },
-      { name: "melon", emoji: "🍈", radius: 66, color: "#8dcf80", score: 28 },
-      { name: "watermelon", emoji: "🍉", radius: 78, color: "#46a75e", score: 36 }
+    const COLS = 6;
+    const ROWS = 5;
+    const COST = 3;
+    const MAX_FIELD_UNITS = 6;
+    const MAX_BENCH_UNITS = 12;
+    const MAX_GACHA = 6;
+    const PAID_GACHA_COST = 2;
+    const STAGE_REWARDS = [5, 6, 15, 14, 19];
+    const elementNames = {
+      flame: "炎",
+      grove: "森",
+      earth: "土",
+      astral: "水",
+      neutral: "無"
+    };
+    const elementTones = {
+      flame: "#d8894c",
+      grove: "#70b982",
+      earth: "#b9824a",
+      astral: "#4aa7d8",
+      neutral: "#9aa09a"
+    };
+    const elementAdvantage = {
+      flame: "grove",
+      grove: "earth",
+      earth: "astral",
+      astral: "flame"
+    };
+    const enemyStageScales = [
+      { hp: 1.32, atk: 1.24 },
+      { hp: 1.42, atk: 1.32 },
+      { hp: 1.55, atk: 1.42 },
+      { hp: 1.9, atk: 1.68 },
+      { hp: 2.88, atk: 2.4 }
     ];
 
-    let balls;
-    let nextLevel;
-    let aimX;
-    let score;
-    let canDrop;
-    let over;
-    let lastTime;
+    const unitTypes = [
+      { id: "guard", name: "衛士", icon: "🛡️", hp: 88, atk: 9, range: 1, speed: 1.1, tone: "#9aa09a", trait: "防御型", element: "neutral", art: "assets/units/guard.png" },
+      { id: "blade", name: "剣士", icon: "⚔️", hp: 54, atk: 14, range: 1, speed: 1.0, tone: "#d8a34c", trait: "近距離攻撃型", element: "flame", art: "assets/units/blade.png" },
+      { id: "mage", name: "魔導士", icon: "✨", hp: 38, atk: 23, range: 2, speed: 1.65, tone: "#4aa7d8", trait: "中距離攻撃型", element: "astral", art: "assets/units/mage.png" },
+      { id: "archer", name: "射手", icon: "🏹", hp: 42, atk: 15, range: 3, speed: 1.35, tone: "#70b982", trait: "遠距離攻撃型", element: "grove", art: "assets/units/archer.png" },
+      { id: "hammer", name: "槌士", icon: "🔨", hp: 62, atk: 18, range: 1, speed: 1.42, tone: "#b9824a", trait: "重近距離攻撃型", element: "earth", art: "assets/units/hammer.png" }
+    ];
+
+    const gachaUnitTypes = unitTypes.filter((type) => type.id !== "guard");
+
+    const enemyArtById = {
+      slime: "assets/enemies/wrasse.png",
+      wolf: "assets/enemies/puffer.png",
+      imp: "assets/enemies/shrimp.png",
+      brute: "assets/enemies/crab.png",
+      knight: "assets/enemies/crab.png",
+      hexer: "assets/enemies/anemone.png",
+      seer: "assets/enemies/anemone.png",
+      boss: "assets/enemies/anemone.png"
+    };
+
+    const elementIconById = {
+      flame: "assets/elements/flame.png",
+      grove: "assets/elements/grove.png",
+      earth: "assets/elements/earth.png",
+      astral: "assets/elements/water.png",
+      neutral: "assets/elements/neutral.png"
+    };
+
+    const stages = [
+      {
+        name: "草原の小競り合い",
+        element: "grove",
+        reward: 5,
+        enemies: [
+          enemy("slime", "ベラ", "魚", 40, 8, 1, 1.3, "grove", 1, 1),
+          enemy("slime", "ベラ", "魚", 40, 8, 1, 1.3, "grove", 4, 1)
+        ]
+      },
+      {
+        name: "橋の守備隊",
+        element: "flame",
+        reward: 6,
+        enemies: [
+          enemy("wolf", "フグ", "魚", 54, 12, 1, .95, "flame", 0, 1),
+          enemy("wolf", "フグ", "魚", 54, 12, 1, .95, "flame", 5, 1),
+          enemy("imp", "エビ", "エ", 42, 14, 2, 1.35, "astral", 2, 0)
+        ]
+      },
+      {
+        name: "霧の廃塔",
+        element: "astral",
+        reward: 7,
+        enemies: [
+          enemy("brute", "カニ", "蟹", 96, 14, 1, 1.12, "grove", 1, 1),
+          enemy("brute", "カニ", "蟹", 96, 14, 1, 1.12, "grove", 4, 1),
+          enemy("hexer", "イソギンチャク", "花", 58, 20, 3, 1.5, "astral", 2, 0)
+        ]
+      },
+      {
+        name: "竜門の包囲",
+        element: "grove",
+        reward: 8,
+        enemies: [
+          enemy("knight", "大ガニ", "蟹", 88, 13, 1, 1.16, "grove", 0, 1),
+          enemy("brute", "カニ", "蟹", 104, 15, 1, 1.1, "grove", 3, 1),
+          enemy("hexer", "イソギンチャク", "花", 62, 21, 3, 1.45, "astral", 1, 0),
+          enemy("imp", "エビ", "エ", 48, 16, 2, 1.3, "flame", 5, 0)
+        ]
+      },
+      {
+        name: "王座前決戦",
+        element: "flame",
+        reward: 0,
+        enemies: [
+          enemy("knight", "大ガニ", "蟹", 104, 15, 1, 1.15, "grove", 1, 1),
+          enemy("knight", "大ガニ", "蟹", 104, 15, 1, 1.15, "grove", 4, 1),
+          enemy("seer", "大イソギンチャク", "花", 62, 19, 3, 1.5, "astral", 0, 0),
+          enemy("boss", "王イソギンチャク", "花", 140, 19, 2, 1.26, "flame", 3, 0),
+          enemy("imp", "大エビ", "エ", 52, 17, 2, 1.3, "earth", 5, 0)
+        ]
+      }
+    ];
+
+    const boardEl = document.querySelector("#board");
+    const benchEl = document.querySelector("#bench");
+    const enemyPreviewEl = document.querySelector("#enemyPreview");
+    const shopEl = document.querySelector("#shop");
+    const rosterEl = document.querySelector("#roster");
+    const sellButton = document.querySelector("#sellButton");
+    const goldEl = document.querySelector("#gold");
+    const lifeEl = document.querySelector("#life");
+    const stageCountEl = document.querySelector("#stageCount");
+    const stageTrackEl = document.querySelector("#stageTrack");
+    const stageBoostEl = document.querySelector("#stageBoost");
+    const stageWarningEl = document.querySelector("#stageWarning");
+    const unitCountEl = document.querySelector("#unitCount");
+    const phaseEl = document.querySelector("#phase");
+    const clearBannerEl = document.querySelector("#clearBanner");
+    const roundTimeEl = document.querySelector("#roundTime");
+    const battleButton = document.querySelector("#battleButton");
+    const gachaButton = document.querySelector("#gachaButton");
+    const restartButton = document.querySelector("#restartButton");
+    const helpButton = document.querySelector("#helpButton");
+    const helpModal = document.querySelector("#helpModal");
+    const helpClose = document.querySelector("#helpClose");
+
+    let gold;
+    let life;
+    let stageIndex;
+    let units;
+    let gachaPool;
+    let selectedId;
+    let phase;
+    let combatants;
+    let lastTick;
+    let roundStart;
+    let timer;
     let nextId;
+    let logs;
+    let damageTotals;
+    let enemyElements;
+    let gachaLeft;
+    let endState;
+    let rewardTimer;
 
-    function randomLevel() {
-      return Math.floor(Math.random() * 4);
+    function enemy(id, name, icon, hp, atk, range, speed, element, x, y) {
+      return { id, name, icon, hp, atk, range, speed, element, x, y, tone: elementTones[element] || "#df7069", trait: "敵", art: enemyArtById[id] };
     }
 
-    function reset() {
-      balls = [];
-      nextLevel = randomLevel();
-      aimX = W / 2;
-      score = 0;
-      canDrop = true;
-      over = false;
-      lastTime = performance.now();
-      nextId = 1;
-      statusEl.textContent = "";
-      updateScore();
-      updatePreview();
-    }
-
-    function updateScore() {
-      scoreEl.textContent = String(score);
-    }
-
-    function updatePreview() {
-      const fruit = fruits[nextLevel];
-      nextFruitEl.textContent = fruit.emoji;
-      nextFruitEl.style.background = fruit.color;
-    }
-
-    function dropFruit() {
-      if (!canDrop || over) return;
-      const fruit = fruits[nextLevel];
-      balls.push({
-        id: nextId++,
-        level: nextLevel,
-        x: clamp(aimX, wall + fruit.radius, W - wall - fruit.radius),
-        y: dropY,
-        vx: 0,
-        vy: 1.2,
-        radius: fruit.radius,
-        merging: false,
-        bornAt: performance.now()
-      });
-      nextLevel = randomLevel();
-      canDrop = false;
-      updatePreview();
-      setTimeout(() => {
-        canDrop = true;
-      }, 430);
-    }
-
-    function clamp(value, min, max) {
-      return Math.max(min, Math.min(max, value));
-    }
-
-    function physicsStep() {
-      for (const ball of balls) {
-        ball.vy += gravity;
-        ball.x += ball.vx;
-        ball.y += ball.vy;
-        ball.vx *= friction;
-
-        if (ball.x - ball.radius < wall) {
-          ball.x = wall + ball.radius;
-          ball.vx = Math.abs(ball.vx) * bounce;
-        }
-        if (ball.x + ball.radius > W - wall) {
-          ball.x = W - wall - ball.radius;
-          ball.vx = -Math.abs(ball.vx) * bounce;
-        }
-        if (ball.y + ball.radius > floorY) {
-          ball.y = floorY - ball.radius;
-          ball.vy = -Math.abs(ball.vy) * bounce;
-          ball.vx *= 0.985;
-          if (Math.abs(ball.vy) < 0.45) ball.vy = 0;
-        }
-      }
-
-      for (let i = 0; i < balls.length; i++) {
-        for (let j = i + 1; j < balls.length; j++) {
-          const a = balls[i];
-          const b = balls[j];
-          if (a.merging || b.merging) continue;
-
-          const dx = b.x - a.x;
-          const dy = b.y - a.y;
-          const dist = Math.hypot(dx, dy) || 0.0001;
-          const minDist = a.radius + b.radius;
-
-          if (dist >= minDist) continue;
-
-          if (a.level === b.level && a.level < fruits.length - 1) {
-            merge(a, b);
-            continue;
-          }
-
-          const nx = dx / dist;
-          const ny = dy / dist;
-          const overlap = minDist - dist;
-          const push = overlap * 0.5;
-          a.x -= nx * push;
-          a.y -= ny * push;
-          b.x += nx * push;
-          b.y += ny * push;
-
-          const relative = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
-          if (relative < 0) {
-            const impulse = relative * -0.54;
-            a.vx -= impulse * nx;
-            a.vy -= impulse * ny;
-            b.vx += impulse * nx;
-            b.vy += impulse * ny;
-          }
-        }
-      }
-    }
-
-    function merge(a, b) {
-      a.merging = true;
-      b.merging = true;
-      const next = fruits[a.level + 1];
-      const merged = {
-        id: nextId++,
-        level: a.level + 1,
-        x: (a.x + b.x) / 2,
-        y: (a.y + b.y) / 2,
-        vx: (a.vx + b.vx) * 0.25,
-        vy: (a.vy + b.vy) * 0.25 - 1.4,
-        radius: next.radius,
-        merging: false,
-        bornAt: performance.now()
+    function fieldEnemy(foe, index) {
+      const scale = enemyStageScales[stageIndex] || enemyStageScales[enemyStageScales.length - 1];
+      const element = enemyElements[index] || foe.element;
+      return {
+        ...foe,
+        hp: Math.round(foe.hp * scale.hp),
+        atk: Math.round(foe.atk * scale.atk),
+        element,
+        tone: elementTones[element] || foe.tone
       };
-      balls = balls.filter((ball) => ball !== a && ball !== b);
-      balls.push(merged);
-      score += next.score;
-      updateScore();
     }
 
-    function checkGameOver(now) {
-      if (over) return;
-      const settledAboveLine = balls.some((ball) => {
-        const oldEnough = now - ball.bornAt > 1800;
-        const slow = Math.abs(ball.vx) + Math.abs(ball.vy) < 1.2;
-        return oldEnough && slow && ball.y - ball.radius < dangerY;
+    function currentStage() {
+      return stages[Math.min(stageIndex, stages.length - 1)];
+    }
+
+    function newRun() {
+      clearTimeout(rewardTimer);
+      gold = 5;
+      life = 3;
+      stageIndex = 0;
+      units = [];
+      selectedId = null;
+      phase = "prep";
+      combatants = [];
+      nextId = 1;
+      damageTotals = {};
+      enemyElements = rollEnemyElements();
+      gachaLeft = MAX_GACHA;
+      endState = null;
+      logs = ["敵属性ばらつき"];
+      addStartingUnit();
+      refillGacha("初回無料ガチャ");
+      render();
+    }
+
+    function rollEnemyElements() {
+      const keys = Object.keys(elementNames).filter((key) => key !== "neutral");
+      return currentStage().enemies.map(() => keys[Math.floor(Math.random() * keys.length)]);
+    }
+
+    function addStartingUnit() {
+      const type = gachaUnitTypes[Math.floor(Math.random() * gachaUnitTypes.length)];
+      units.push({
+        uid: nextId++,
+        type: type.id,
+        star: 1,
+        cost: COST,
+        x: 2,
+        y: ROWS - 1
       });
-      if (settledAboveLine) {
-        over = true;
-        statusEl.textContent = "ゲームオーバー";
+      logs.unshift(`${type.name}★が初期配置`);
+    }
+
+
+    function drawGacha(logLine) {
+      if (gachaLeft > 0) {
+        gachaLeft -= 1;
+      } else {
+        if (gold < PAID_GACHA_COST) {
+          gachaPool = [];
+          if (logLine) logs.unshift("有料ガチャのゴールド不足");
+          return false;
+        }
+        gold -= PAID_GACHA_COST;
+      }
+      gachaPool = Array.from({ length: 3 }, makeGachaOffer);
+      if (logLine) logs.unshift(logLine);
+      return true;
+    }
+
+    function refillGacha(logLine) {
+      gachaPool = Array.from({ length: 3 }, makeGachaOffer);
+      if (logLine) logs.unshift(logLine);
+    }
+
+    function makeGachaOffer() {
+      const type = gachaUnitTypes[Math.floor(Math.random() * gachaUnitTypes.length)];
+      const star = stageIndex >= 3 && Math.random() < .16 ? 2 : 1;
+      return { type, star };
+    }
+
+    function offerCost(offer) {
+      const star = offer.star || 1;
+      return COST + (star > 1 ? 1 : 0);
+    }
+
+    function unitSellValue(unit) {
+      return COST + Math.max(0, (unit.star || 1) - 1);
+    }
+
+    function battleReward() {
+      return STAGE_REWARDS[Math.min(stageIndex, STAGE_REWARDS.length - 1)];
+    }
+
+    function rollGacha() {
+      if (phase !== "prep") return;
+      drawGacha(gachaLeft > 0 ? "ガチャを回した" : `有料ガチャ ${PAID_GACHA_COST}G`);
+      render();
+    }
+
+    function buy(poolIndex) {
+      if (phase !== "prep") return;
+      const offer = gachaPool[poolIndex];
+      if (!offer) return;
+      const type = offer.type || offer;
+      const star = offer.star || 1;
+      const cost = offerCost(offer);
+      if (!canBuyOffer(offer)) return;
+      gold -= cost;
+      units.push({
+        uid: nextId++,
+        type: type.id,
+        star,
+        cost,
+        x: null,
+        y: null
+      });
+      gachaPool.splice(poolIndex, 1);
+      selectedId = null;
+      logs.unshift(`${type.name}${stars(star)}を雇用`);
+      render();
+    }
+
+    function canBuyOffer(offer) {
+      const type = offer.type || offer;
+      const star = offer.star || 1;
+      if (gold < offerCost(offer) || phase !== "prep") return false;
+      if (benchUnits().length >= MAX_BENCH_UNITS) return false;
+      if (units.length < currentMaxUnits()) return true;
+      return false;
+    }
+
+    function currentMaxUnits() {
+      return MAX_BENCH_UNITS + Math.max(MAX_FIELD_UNITS, fieldUnits().length);
+    }
+
+    function evolveDeployedUnits() {
+      for (let star = 1; star < 3; star++) {
+        for (const type of unitTypes) {
+          const matches = fieldUnits().filter((unit) => unit.type === type.id && unit.star === star);
+          if (matches.length < 3) continue;
+          const keeper = matches[0];
+          keeper.star += 1;
+          keeper.cost = unitSellValue(keeper);
+          keeper.levelUpUntil = Date.now() + 1400;
+          units = units.filter((unit) => !matches.slice(1, 3).includes(unit));
+          selectedId = keeper.uid;
+          logs.unshift(`${type.name}が盤面で★${keeper.star}に進化`);
+          setTimeout(() => {
+            const leveled = units.find((unit) => unit.uid === keeper.uid);
+            if (leveled) {
+              leveled.levelUpUntil = 0;
+              render();
+            }
+          }, 1400);
+          evolveDeployedUnits();
+          return;
+        }
       }
     }
 
-    function draw() {
-      ctx.clearRect(0, 0, W, H);
+    function startBattle() {
+      const deployed = fieldUnits();
+      if (phase !== "prep" || deployed.length === 0) return;
+      if (deployed.length > MAX_FIELD_UNITS) {
+        logs.unshift("戦闘に参加できる駒は最大６体です");
+        render();
+        return;
+      }
+      phase = "battle";
+      selectedId = null;
+      damageTotals = Object.fromEntries(deployed.map((unit) => [unit.uid, 0]));
+      const players = deployed.map((unit) => {
+        const type = unitTypes.find((item) => item.id === unit.type);
+        return makeCombatant({ ...unitStats(type, unit.star), id: type.id, name: type.name, icon: type.icon, tone: type.tone, element: type.element, art: type.art, x: unit.x, y: unit.y, star: unit.star }, "player", unit.uid);
+      });
+      const foes = stages[stageIndex].enemies.map((foe, index) => makeCombatant(fieldEnemy(foe, index), "enemy", `e${index}`));
+      combatants = [...players, ...foes];
+      roundStart = performance.now();
+      lastTick = roundStart;
+      clearInterval(timer);
+      timer = setInterval(tickBattle, 180);
+      logs.unshift(`${stages[stageIndex].name} 開戦`);
+      render();
+    }
 
-      ctx.save();
-      ctx.strokeStyle = "rgba(194, 65, 61, .72)";
-      ctx.setLineDash([8, 8]);
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(wall + 6, dangerY);
-      ctx.lineTo(W - wall - 6, dangerY);
-      ctx.stroke();
-      ctx.restore();
+    function makeCombatant(source, team, uid) {
+      return {
+        uid,
+        team,
+        name: source.name,
+        id: source.id,
+        icon: source.icon,
+        art: source.art,
+        tone: source.tone,
+        element: source.element,
+        maxHp: source.hp,
+        hp: source.hp,
+        atk: source.atk,
+        range: source.range,
+        speed: source.speed,
+        star: source.star || 1,
+        x: source.x,
+        y: source.y,
+        wait: Math.random() * .5,
+        hit: false,
+        lungeX: 0,
+        lungeY: 0,
+        lungeUntil: 0
+      };
+    }
 
-      if (!over) {
-        const ghost = fruits[nextLevel];
-        const x = clamp(aimX, wall + ghost.radius, W - wall - ghost.radius);
-        drawFruit(x, dropY, ghost.radius, nextLevel, nextLevel, 0.38);
-        ctx.fillStyle = "rgba(28, 36, 48, .34)";
-        ctx.fillRect(x - 1, dropY - 38, 2, 34);
+    function unitStats(type, star) {
+      const hpScale = [1, 1.72, 4.2][star - 1] || 1;
+      const atkScale = [1, 1.55, 3.65][star - 1] || 1;
+      const stageScale = 1;
+      return {
+        hp: Math.round(type.hp * hpScale * stageScale),
+        atk: Math.round(type.atk * atkScale * stageScale),
+        range: type.range,
+        speed: Math.max(.75, type.speed - (star - 1) * .08)
+      };
+    }
+
+    function stars(star) {
+      return "★".repeat(star || 1);
+    }
+
+    function elementLabel(element) {
+      return elementNames[element] || "?";
+    }
+
+    function advantageElementAgainst(element) {
+      return Object.keys(elementAdvantage).find((key) => elementAdvantage[key] === element);
+    }
+
+    function attributeMultiplier(attacker, defender) {
+      if (attacker.element === "neutral" || defender.element === "neutral") return 1;
+      if (elementAdvantage[attacker.element] === defender.element) return 1.55;
+      if (elementAdvantage[defender.element] === attacker.element) return .65;
+      return 1;
+    }
+
+    function tickBattle() {
+      const now = performance.now();
+      const dt = Math.min(.45, (now - lastTick) / 1000);
+      lastTick = now;
+      roundTimeEl.textContent = `${((now - roundStart) / 1000).toFixed(1)}s`;
+
+      for (const actor of alive()) {
+        actor.wait -= dt;
+        actor.hit = false;
+        if (actor.lungeUntil <= now) {
+          actor.lungeX = 0;
+          actor.lungeY = 0;
+        }
+        const target = closestEnemy(actor);
+        if (!target) continue;
+        const dist = distance(actor, target);
+        if (dist > actor.range) {
+          stepToward(actor, target);
+          continue;
+        }
+        if (actor.wait <= 0) {
+          const dealt = Math.min(Math.max(1, Math.round(actor.atk * attributeMultiplier(actor, target))), target.hp);
+          target.hp -= dealt;
+          if (actor.team === "player") {
+            damageTotals[actor.uid] = (damageTotals[actor.uid] || 0) + dealt;
+          }
+          target.hit = true;
+          actor.lungeX = Math.sign(target.x - actor.x) * 18;
+          actor.lungeY = Math.sign(target.y - actor.y) * 18;
+          actor.lungeUntil = now + 170;
+          actor.wait = actor.speed;
+        }
       }
 
-      for (const ball of balls) {
-        drawFruit(ball.x, ball.y, ball.radius, ball.level, ball.level, 1);
+      combatants = combatants.filter((unit) => unit.hp > 0);
+      const playersAlive = combatants.some((unit) => unit.team === "player");
+      const enemiesAlive = combatants.some((unit) => unit.team === "enemy");
+
+      if (!enemiesAlive || !playersAlive) {
+        endBattle(enemiesAlive ? "lose" : "win");
+        return;
+      }
+      renderBoard();
+      renderRoster();
+    }
+
+    function alive() {
+      return combatants.filter((unit) => unit.hp > 0);
+    }
+
+    function closestEnemy(actor) {
+      return alive()
+        .filter((unit) => unit.team !== actor.team)
+        .sort((a, b) => distance(actor, a) - distance(actor, b))[0];
+    }
+
+    function distance(a, b) {
+      return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+    }
+
+    function stepToward(actor, target) {
+      const choices = [];
+      if (target.x !== actor.x) choices.push({ x: actor.x + Math.sign(target.x - actor.x), y: actor.y });
+      if (target.y !== actor.y) choices.push({ x: actor.x, y: actor.y + Math.sign(target.y - actor.y) });
+      choices.push({ x: actor.x, y: actor.y });
+      const open = choices
+        .filter((spot) => spot.x >= 0 && spot.x < COLS && spot.y >= 0 && spot.y < ROWS)
+        .filter((spot) => !combatants.some((unit) => unit !== actor && unit.hp > 0 && unit.x === spot.x && unit.y === spot.y))
+        .sort((a, b) => distance(a, target) - distance(b, target))[0];
+      if (open) {
+        actor.x = open.x;
+        actor.y = open.y;
       }
     }
 
-    function drawFruit(x, y, radius, textLevel, colorLevel, alpha) {
-      const fruit = fruits[colorLevel];
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      const gradient = ctx.createRadialGradient(x - radius * 0.35, y - radius * 0.4, radius * 0.2, x, y, radius);
-      gradient.addColorStop(0, "#fff8dc");
-      gradient.addColorStop(0.18, fruit.color);
-      gradient.addColorStop(1, shade(fruit.color, -22));
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(48, 43, 32, .22)";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.font = `${Math.max(18, radius * 1.08)}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(fruits[textLevel].emoji, x, y + radius * 0.05);
-      ctx.restore();
+    function endBattle(result) {
+      clearInterval(timer);
+      phase = "result";
+      endState = result;
+      logs.unshift(result === "win" ? "WIN" : "LOSE");
+      render();
+      setTimeout(() => finishBattleResult(result), 900);
     }
 
-    function shade(hex, percent) {
-      const n = Number.parseInt(hex.slice(1), 16);
-      const amt = Math.round(2.55 * percent);
-      const r = clamp((n >> 16) + amt, 0, 255);
-      const g = clamp(((n >> 8) & 255) + amt, 0, 255);
-      const b = clamp((n & 255) + amt, 0, 255);
-      return `rgb(${r}, ${g}, ${b})`;
+    function finishBattleResult(result) {
+      if (phase !== "result") return;
+      endState = null;
+      const reward = battleReward();
+      if (result === "win") {
+        if (stageIndex === stages.length - 1) {
+          endState = "clear";
+          phase = "won";
+          logs.unshift("勝利");
+          logs.unshift("全ステージクリア");
+          rewardTimer = setTimeout(() => {
+            if (phase === "won") {
+              endState = "reward";
+              render();
+            }
+          }, 1300);
+        } else {
+          gold += reward;
+          stageIndex += 1;
+          enemyElements = rollEnemyElements();
+          logs.unshift(`勝利 ${reward}G獲得`);
+          refillGacha("ステージ開始ガチャ");
+          phase = "prep";
+        }
+      } else {
+        life -= 1;
+        gold += reward;
+        logs.unshift(`敗北 ${reward}G獲得`);
+        if (life > 0) {
+          refillGacha("ステージ開始ガチャ");
+        } else {
+          gachaPool = [];
+          endState = "gameover";
+        }
+        phase = life > 0 ? "prep" : "gameover";
+      }
+      render();
     }
 
-    function loop(now) {
-      const delta = Math.min(32, now - lastTime);
-      lastTime = now;
-      const steps = Math.max(1, Math.round(delta / 16));
-      for (let i = 0; i < steps; i++) physicsStep();
-      checkGameOver(now);
-      draw();
-      requestAnimationFrame(loop);
+    function selectOrPlace(x, y) {
+      if (phase !== "prep" || y < 3) return;
+      const clicked = units.find((item) => item.x === x && item.y === y);
+      const selected = units.find((item) => item.uid === selectedId);
+
+      if (!selected) {
+        if (clicked) selectedId = clicked.uid;
+        render();
+        return;
+      }
+
+      if (clicked && clicked.uid === selected.uid) {
+        selectedId = null;
+        render();
+        return;
+      }
+
+      if (clicked) {
+        clicked.x = selected.x;
+        clicked.y = selected.y;
+      }
+      selected.x = x;
+      selected.y = y;
+      evolveDeployedUnits();
+      selectedId = null;
+      render();
     }
 
-    canvas.addEventListener("pointermove", (event) => {
-      const rect = canvas.getBoundingClientRect();
-      aimX = ((event.clientX - rect.left) / rect.width) * W;
+    function selectOrBench(uid) {
+      if (phase !== "prep") return;
+      const clicked = units.find((item) => item.uid === uid);
+      const selected = units.find((item) => item.uid === selectedId);
+
+      if (!selected) {
+        if (clicked) selectedId = clicked.uid;
+        render();
+        return;
+      }
+
+      if (clicked && clicked.uid === selected.uid) {
+        selectedId = null;
+        render();
+        return;
+      }
+
+      if (clicked) {
+        clicked.x = selected.x;
+        clicked.y = selected.y;
+      }
+      selected.x = null;
+      selected.y = null;
+      selectedId = null;
+      render();
+    }
+
+    function sellSelected() {
+      sellUnit(selectedId);
+    }
+
+    function sellUnit(uid) {
+      if (phase !== "prep" || !uid) return;
+      const unit = units.find((item) => item.uid === uid);
+      if (!unit) return;
+      const type = unitTypes.find((item) => item.id === unit.type);
+      const sellValue = unitSellValue(unit);
+      units = units.filter((item) => item.uid !== uid);
+      if (selectedId === uid) selectedId = null;
+      gold += sellValue;
+      logs.unshift(`${type.name}を解雇 ${sellValue}G獲得`);
+      render();
+    }
+
+    function isDeployed(unit) {
+      return Number.isInteger(unit.x) && Number.isInteger(unit.y);
+    }
+
+    function fieldUnits() {
+      return units.filter(isDeployed);
+    }
+
+    function benchUnits() {
+      return units.filter((unit) => !isDeployed(unit));
+    }
+
+    function render() {
+      goldEl.textContent = String(gold);
+      lifeEl.textContent = String(life);
+      stageCountEl.textContent = `${Math.min(stageIndex + 1, stages.length)}/${stages.length}`;
+      stageBoostEl.innerHTML = `敵属性: 個体ごと / 有利 x1.55 不利 x0.65`;
+      phaseEl.textContent = labelPhase();
+      unitCountEl.textContent = `盤面 ${fieldUnits().length}/${MAX_FIELD_UNITS} 控え ${benchUnits().length}/${MAX_BENCH_UNITS} 所持 ${units.length}/${currentMaxUnits()}`;
+      stageWarningEl.classList.toggle("show", phase === "prep" && fieldUnits().length > MAX_FIELD_UNITS);
+      battleButton.disabled = phase !== "prep" || fieldUnits().length === 0 || fieldUnits().length > MAX_FIELD_UNITS;
+      gachaButton.textContent = gachaLeft > 0 ? `ガチャ ${gachaLeft}/${MAX_GACHA}` : `有料ガチャ ${PAID_GACHA_COST}G`;
+      gachaButton.disabled = phase !== "prep" || (gachaLeft <= 0 && gold < PAID_GACHA_COST);
+      renderEndOverlay();
+      renderTrack();
+      renderEnemyPreview();
+      renderGachaPool();
+      renderRoster();
+      renderBoard();
+      renderBench();
+      renderSellButton();
+    }
+
+    function labelPhase() {
+      if (phase === "battle") return "戦闘";
+      if (phase === "result") return "結果";
+      if (phase === "gameover") return "終了";
+      if (phase === "won") return "制覇";
+      return "準備";
+    }
+
+    function renderEndOverlay() {
+      clearBannerEl.classList.toggle("show", Boolean(endState));
+      clearBannerEl.classList.toggle("reward-mode", endState === "reward");
+      if (endState === "win") {
+        clearBannerEl.textContent = "WIN";
+      } else if (endState === "lose") {
+        clearBannerEl.textContent = "LOSE";
+      } else if (endState === "clear") {
+        clearBannerEl.textContent = "GAME CLEAR!";
+      } else if (endState === "reward") {
+        clearBannerEl.innerHTML = `<img class="reward-image" src="assets/tertet.png" alt="ご褒美画像">`;
+      } else if (endState === "gameover") {
+        clearBannerEl.textContent = "GAME OVER";
+      } else {
+        clearBannerEl.textContent = "";
+      }
+    }
+
+    function renderTrack() {
+      stageTrackEl.innerHTML = "";
+      stages.forEach((_, index) => {
+        const dot = document.createElement("i");
+        dot.className = "stage-dot";
+        if (index < stageIndex || phase === "won") dot.classList.add("done");
+        if (index === stageIndex && phase !== "won") dot.classList.add("current");
+        stageTrackEl.append(dot);
+      });
+    }
+
+    function enemyScoutEntries() {
+      const counts = new Map();
+      stages[stageIndex].enemies.forEach((foe, index) => {
+        const scouted = fieldEnemy(foe, index);
+        const key = `${scouted.id}:${scouted.element}`;
+        if (!counts.has(key)) counts.set(key, { foe: scouted, count: 0 });
+        counts.get(key).count += 1;
+      });
+      return [...counts.values()];
+    }
+
+    function renderEnemyPreview() {
+      enemyPreviewEl.innerHTML = "";
+      if (phase !== "prep") return;
+      const label = document.createElement("div");
+      label.className = "enemy-chip label";
+      label.textContent = "敵戦力";
+      enemyPreviewEl.append(label);
+      enemyScoutEntries().forEach(({ foe, count }) => {
+        const chip = document.createElement("div");
+        chip.className = "enemy-chip";
+        const face = foe.art
+          ? `<i style="--tone:${foe.tone}"><img class="enemy-chip-art" src="${foe.art}" alt="">${elementIconHtml(foe.element)}</i>`
+          : `<i style="--tone:${foe.tone}">${foe.icon}${elementIconHtml(foe.element)}</i>`;
+        chip.innerHTML = `${face}<span>${foe.name}</span><b>x${count}</b>`;
+        enemyPreviewEl.append(chip);
+      });
+      const reward = document.createElement("div");
+      reward.className = "enemy-chip";
+      reward.innerHTML = `<span>獲得G</span><b>${battleReward()}G</b>`;
+      enemyPreviewEl.append(reward);
+    }
+
+    function renderGachaPool() {
+      shopEl.innerHTML = "";
+      if (gachaPool.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "piece-row";
+        empty.innerHTML = `<div class="avatar" style="--tone:#596456">?</div><div><strong>ガチャを引いてください</strong><small>候補が出るとここから買えます</small></div><button disabled>購入</button>`;
+        shopEl.append(empty);
+        return;
+      }
+      gachaPool.forEach((offer, index) => {
+        const type = offer.type || offer;
+        const star = offer.star || 1;
+        const stats = unitStats(type, star);
+        const row = document.createElement("div");
+        row.className = "piece-row";
+        const cost = offerCost(offer);
+        row.innerHTML = `
+          ${avatarHtml(type, star)}
+          <div><strong>${type.name} ${stars(star)}</strong><small>${type.trait} / <span class="element-pill">${elementLabel(type.element)}</span> / HP ${stats.hp} / ATK ${stats.atk}</small></div>
+          <button ${!canBuyOffer(offer) ? "disabled" : ""}>購入 ${cost}G</button>
+        `;
+        row.querySelector("button").addEventListener("click", () => buy(index));
+        shopEl.append(row);
+      });
+    }
+
+    function elementIconHtml(element) {
+      const icon = elementIconById[element];
+      return icon ? `<span class="element-badge"><img src="${icon}" alt="${elementLabel(element)}"></span>` : "";
+    }
+
+    function slugHtml(type, star) {
+      return `
+        <span class="slug-piece ${type.id}" aria-hidden="true">
+          <img class="unit-art" src="${type.art}" alt="">
+          ${star && star > 1 ? `<span class="art-star">${stars(star)}</span>` : ""}
+          ${elementIconHtml(type.element)}
+        </span>
+      `;
+    }
+
+    function avatarHtml(type, star) {
+      return `<div class="avatar slug-avatar" style="--tone:${type.tone}">${slugHtml(type, star)}</div>`;
+    }
+
+    function renderRoster() {
+      rosterEl.innerHTML = "";
+      if (units.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "piece-row";
+        empty.innerHTML = `<div class="avatar" style="--tone:#596456">+</div><div><strong>未雇用</strong><small>「駒を買う」から雇用</small></div><span class="damage-pill">売値 -</span>`;
+        rosterEl.append(empty);
+        return;
+      }
+      units.forEach((unit) => {
+        const type = unitTypes.find((item) => item.id === unit.type);
+        const stats = unitStats(type, unit.star);
+        const position = isDeployed(unit) ? "" : " / 控え";
+        const sellValue = unitSellValue(unit);
+        const row = document.createElement("div");
+        row.className = "piece-row roster-row";
+        row.innerHTML = `
+          ${avatarHtml(type, unit.star)}
+          <div><strong>${type.name} ${stars(unit.star)}</strong><small>${type.trait} / <span class="element-pill">${elementLabel(type.element)}</span>${position}<br>HP ${stats.hp} / ATK ${stats.atk}</small></div>
+          <div class="unit-metrics">
+            <span class="damage-pill">DMG ${damageTotals[unit.uid] || 0}</span>
+            <button class="damage-pill roster-sell" ${phase !== "prep" ? "disabled" : ""}>売値 ${sellValue}G</button>
+          </div>
+        `;
+        row.querySelector(".roster-sell").addEventListener("click", (event) => {
+          event.stopPropagation();
+          sellUnit(unit.uid);
+        });
+        row.addEventListener("click", () => {
+          selectedId = unit.uid;
+          render();
+        });
+        rosterEl.append(row);
+      });
+    }
+
+    function renderSellButton() {
+      const unit = units.find((item) => item.uid === selectedId);
+      const ready = phase === "prep" && Boolean(unit);
+      sellButton.disabled = !ready;
+      sellButton.classList.toggle("ready", ready);
+      sellButton.textContent = ready ? `売却 ${unitSellValue(unit)}G` : "売却";
+    }
+
+    function renderBench() {
+      benchEl.innerHTML = "";
+      const waiting = benchUnits();
+      for (let index = 0; index < MAX_BENCH_UNITS; index++) {
+        const unit = waiting[index];
+        const slot = document.createElement("button");
+        slot.className = "bench-slot";
+        if (!unit) slot.classList.add("empty");
+        if (unit && unit.uid === selectedId) slot.classList.add("selected");
+        slot.addEventListener("click", () => selectOrBench(unit ? unit.uid : null));
+        if (unit) {
+          const type = unitTypes.find((item) => item.id === unit.type);
+          const stats = unitStats(type, unit.star);
+          slot.append(unitNode({ ...type, ...stats, uid: unit.uid, team: "player", x: 0, y: 0, maxHp: stats.hp, hp: stats.hp, star: unit.star, levelUpUntil: unit.levelUpUntil }));
+        }
+        benchEl.append(slot);
+      }
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = "";
+      const boardUnits = phase === "battle" ? combatants : prepUnits();
+      for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+          const cell = document.createElement("button");
+          cell.className = "cell";
+          if (y < 2) cell.classList.add("enemy-row");
+          if (y > 2) cell.classList.add("player-row");
+          cell.dataset.x = String(x);
+          cell.dataset.y = String(y);
+          const occupant = boardUnits.find((unit) => unit.x === x && unit.y === y);
+          if (occupant && occupant.uid === selectedId) cell.classList.add("selected");
+          cell.addEventListener("click", () => selectOrPlace(x, y));
+          if (occupant) cell.append(unitNode(occupant));
+          boardEl.append(cell);
+        }
+      }
+    }
+
+    function prepUnits() {
+      const player = fieldUnits().map((unit) => {
+        const type = unitTypes.find((item) => item.id === unit.type);
+        const stats = unitStats(type, unit.star);
+        return { ...type, ...stats, uid: unit.uid, team: "player", x: unit.x, y: unit.y, maxHp: stats.hp, hp: stats.hp, star: unit.star, levelUpUntil: unit.levelUpUntil };
+      });
+      if (phase !== "prep") return player;
+      const enemies = stages[stageIndex].enemies.map((foe, index) => {
+        const scouted = fieldEnemy(foe, index);
+        return { ...scouted, uid: `preview-${index}`, team: "enemy", maxHp: scouted.hp, hp: scouted.hp };
+      });
+      return [...player, ...enemies];
+    }
+
+    function unitNode(unit) {
+      const node = document.createElement("div");
+      node.className = `unit ${unit.team}`;
+      if (unit.hit) node.classList.add("hit");
+      node.style.setProperty("--tone", unit.tone);
+      node.style.setProperty("--tx", `${unit.lungeX || 0}%`);
+      node.style.setProperty("--ty", `${unit.lungeY || 0}%`);
+      if (unit.team === "player") {
+        node.classList.add("slug-unit");
+        node.innerHTML = slugHtml(unit, unit.star);
+      } else if (unit.art) {
+        node.innerHTML = `<img class="unit-art" src="${unit.art}" alt="">${elementIconHtml(unit.element)}`;
+      } else {
+        node.innerHTML = `${unit.icon}${elementIconHtml(unit.element)}`;
+      }
+      const hp = document.createElement("span");
+      hp.className = "hp";
+      hp.innerHTML = `<i style="--hp:${Math.max(0, Math.round((unit.hp / unit.maxHp) * 100))}"></i>`;
+      node.append(hp);
+      if (unit.levelUpUntil && unit.levelUpUntil > Date.now()) {
+        const level = document.createElement("span");
+        level.className = "level-up-pop";
+        level.textContent = "Level up!";
+        node.append(level);
+      }
+      return node;
+    }
+
+    function openHelp() {
+      helpModal.classList.add("show");
+      helpModal.setAttribute("aria-hidden", "false");
+      helpClose.focus();
+    }
+
+    function closeHelp() {
+      helpModal.classList.remove("show");
+      helpModal.setAttribute("aria-hidden", "true");
+      helpButton.focus();
+    }
+
+    battleButton.addEventListener("click", startBattle);
+    gachaButton.addEventListener("click", rollGacha);
+    sellButton.addEventListener("click", sellSelected);
+    helpButton.addEventListener("click", openHelp);
+    helpClose.addEventListener("click", closeHelp);
+    helpModal.addEventListener("click", (event) => {
+      if (event.target === helpModal) closeHelp();
     });
-
-    canvas.addEventListener("pointerdown", (event) => {
-      const rect = canvas.getBoundingClientRect();
-      aimX = ((event.clientX - rect.left) / rect.width) * W;
-      dropFruit();
-    });
-
     window.addEventListener("keydown", (event) => {
-      if (event.key === "ArrowLeft") {
-        aimX -= 18;
-        event.preventDefault();
+      if (event.key === "Escape" && helpModal.classList.contains("show")) closeHelp();
+    });
+    restartButton.addEventListener("click", () => {
+      clearInterval(timer);
+      newRun();
+    });
+    clearBannerEl.addEventListener("click", () => {
+      if (phase === "gameover" || endState === "reward") {
+        clearInterval(timer);
+        newRun();
       }
-      if (event.key === "ArrowRight") {
-        aimX += 18;
-        event.preventDefault();
-      }
-      if (event.code === "Space") {
-        dropFruit();
-        event.preventDefault();
-      }
-      aimX = clamp(aimX, wall + 15, W - wall - 15);
     });
 
-    restartButton.addEventListener("click", reset);
-
-    reset();
-    requestAnimationFrame(loop);
+    newRun();
   </script>
 </body>
 </html>

@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ウミウシAutoChess ルール説明</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1d261f;
+      --muted: #5e6b60;
+      --line: #d9dfd2;
+      --green: #426f4a;
+      --gold: #b88a2f;
+      --paper: #fbfaf3;
+      --soft: #eef4e8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #e8eee1;
+      color: var(--ink);
+      font-family: "Yu Gothic", "Hiragino Sans", Meiryo, sans-serif;
+      line-height: 1.7;
+    }
+
+    main {
+      width: min(960px, calc(100% - 32px));
+      margin: 24px auto;
+      padding: 32px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--paper);
+      box-shadow: 0 18px 50px rgba(29, 38, 31, .12);
+    }
+
+    h1, h2, h3, p {
+      margin-top: 0;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 34px 0 12px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--line);
+      font-size: 1.35rem;
+    }
+
+    h3 {
+      margin-bottom: 6px;
+      color: var(--green);
+      font-size: 1.05rem;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(260px, .9fr);
+      gap: 22px;
+      align-items: center;
+      margin-top: 24px;
+    }
+
+    .hero img,
+    .visual img {
+      width: 100%;
+      display: block;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #dce6d7;
+    }
+
+    .summary {
+      display: grid;
+      gap: 10px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--soft);
+    }
+
+    .summary b {
+      color: var(--green);
+    }
+
+    ol, ul {
+      padding-left: 1.35rem;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fffdf6;
+    }
+
+    .enemy-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .unit-grid,
+    .element-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .piece {
+      display: grid;
+      gap: 8px;
+      justify-items: center;
+      padding: 12px 8px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fffdf6;
+      text-align: center;
+      min-height: 132px;
+    }
+
+    .piece img {
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+    }
+
+    .unit-portrait {
+      width: 86px;
+      height: 86px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, .55);
+      background: radial-gradient(circle at 34% 24%, rgba(255, 255, 255, .65), var(--tone) 34%, rgba(0, 0, 0, .28));
+      box-shadow: inset -9px -12px 0 rgba(0, 0, 0, .18), 0 8px 12px rgba(0, 0, 0, .16);
+    }
+
+    .unit-portrait img {
+      width: 100%;
+      height: 100%;
+      transform: scale(1.28);
+      filter: drop-shadow(0 7px 5px rgba(0, 0, 0, .24));
+    }
+
+    .piece strong {
+      display: block;
+      line-height: 1.2;
+    }
+
+    .piece small {
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .step {
+      padding: 12px;
+      border-radius: 10px;
+      background: #1f3328;
+      color: #fff8d8;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .note {
+      padding: 14px 16px;
+      border-left: 5px solid var(--gold);
+      background: #fff6d8;
+      color: #59451b;
+    }
+
+    .reward-note {
+      padding: 10px 12px;
+      border: 2px solid #d60000;
+      border-radius: 8px;
+      background: #ffe8e8;
+      color: #d60000;
+      font-weight: 1000;
+    }
+
+    @media (max-width: 820px) {
+      main {
+        padding: 22px;
+      }
+
+      .hero,
+      .cards,
+      .unit-grid,
+      .enemy-grid,
+      .element-grid,
+      .flow {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      main {
+        width: auto;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+      }
+
+      a {
+        color: inherit;
+      }
+
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>ウミウシAutoChess</h1>
+    <p class="lead">ウミウシの駒を集めて配置し、海底神殿に現れる敵を倒して全5ステージの突破を目指す、一人用オートチェスです。</p>
+
+    <section class="hero">
+      <div class="summary">
+        <p><b>目的:</b> 5ステージ目を突破して GAME CLEAR を見ること。</p>
+        <p><b>核となる遊び:</b> ガチャで駒を買い、配置を変え、同じ駒を揃えてレベルアップさせ、属性相性を見ながら部隊を組み替えます。</p>
+        <p><b>プレイ時間の目安:</b> 1プレイ10分程度。</p>
+      </div>
+      <img src="assets/rules-hero-battle.png" alt="ウミウシの駒と海の敵が戦うイメージ画像">
+    </section>
+
+    <h2>基本の流れ</h2>
+    <div class="flow">
+      <div class="step">1. 駒を買う</div>
+      <div class="step">2. 盤面に配置</div>
+      <div class="step">3. 戦闘開始</div>
+      <div class="step">4. 報酬獲得</div>
+      <div class="step">5. 編成を更新</div>
+    </div>
+
+    <h2>最初に覚えること</h2>
+    <ol>
+      <li>「駒を買う」欄から駒を購入します。</li>
+      <li>駒をクリックして選択し、盤面のマスをクリックすると配置できます。</li>
+      <li>配置が終わったら「戦闘開始」ボタンを押します。戦闘は自動で進みます。</li>
+      <li>勝っても負けてもゴールドを得られるので、負けた後もガチャや売却で立て直せます。</li>
+    </ol>
+
+    <h2>強くなる方法</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>ガチャ</h3>
+        <p>候補を更新して、必要な駒を買います。無料回数がなくなると有料ガチャになります。</p>
+      </div>
+      <div class="card">
+        <h3>売却</h3>
+        <p>不要な駒は売ってゴールドに戻せます。部隊欄の売値ボタン、または控え欄横の売却ボタンから売却できます。</p>
+      </div>
+      <div class="card">
+        <h3>レベルアップ</h3>
+        <p>同じ駒を盤面に3体並べると進化します。レベル3の駒は大きな戦力になります。</p>
+      </div>
+      <div class="card">
+        <h3>配置</h3>
+        <p>盾役を前に、遠距離型を後ろに置くなど、敵の位置と射程を見て調整します。</p>
+      </div>
+    </div>
+
+    <h2>属性相性</h2>
+    <p>有利属性で攻撃するとダメージが増え、不利属性だとダメージが下がります。</p>
+    <div class="element-grid">
+      <div class="piece"><img src="assets/elements/flame.png" alt="炎"><strong>炎</strong><small>森に有利</small></div>
+      <div class="piece"><img src="assets/elements/grove.png" alt="森"><strong>森</strong><small>土に有利</small></div>
+      <div class="piece"><img src="assets/elements/earth.png" alt="土"><strong>土</strong><small>水に有利</small></div>
+      <div class="piece"><img src="assets/elements/water.png" alt="水"><strong>水</strong><small>炎に有利</small></div>
+    </div>
+
+    <h2>味方の駒</h2>
+    <div class="unit-grid">
+      <div class="piece"><span class="unit-portrait" style="--tone:#d8a34c"><img src="assets/units/blade.png" alt="剣士"></span><strong>剣士</strong><small>近距離攻撃型 / 炎</small></div>
+      <div class="piece"><span class="unit-portrait" style="--tone:#70b982"><img src="assets/units/archer.png" alt="射手"></span><strong>射手</strong><small>遠距離攻撃型 / 森</small></div>
+      <div class="piece"><span class="unit-portrait" style="--tone:#b9824a"><img src="assets/units/hammer.png" alt="槌士"></span><strong>槌士</strong><small>重近距離攻撃型 / 土</small></div>
+      <div class="piece"><span class="unit-portrait" style="--tone:#4aa7d8"><img src="assets/units/mage.png" alt="魔導士"></span><strong>魔導士</strong><small>中距離攻撃型 / 水</small></div>
+    </div>
+
+    <h2>敵</h2>
+    <p>ベラやフグは弱め、エビやカニはやや強め、イソギンチャクは強敵です。敵の種類と属性を見て、部隊を組み替えます。</p>
+    <div class="enemy-grid">
+      <div class="piece"><img src="assets/enemies/wrasse.png" alt="ベラ"><strong>ベラ</strong><small>序盤の魚型</small></div>
+      <div class="piece"><img src="assets/enemies/puffer.png" alt="フグ"><strong>フグ</strong><small>魚型の敵</small></div>
+      <div class="piece"><img src="assets/enemies/shrimp.png" alt="エビ"><strong>エビ</strong><small>中距離の敵</small></div>
+      <div class="piece"><img src="assets/enemies/crab.png" alt="カニ"><strong>カニ</strong><small>硬めの敵</small></div>
+      <div class="piece"><img src="assets/enemies/anemone.png" alt="イソギンチャク"><strong>イソギンチャク</strong><small>高火力の強敵</small></div>
+    </div>
+
+    <h2>攻略の考え方</h2>
+    <ul>
+      <li>盤面に出せる戦闘参加駒は最大6体です。</li>
+      <li>控え欄を使って、次の進化候補や属性対策用の駒を残します。</li>
+      <li>同じ駒を集めてレベルアップを狙うか、敵に有利な属性を揃えるかが重要な判断です。</li>
+      <li class="reward-note">5ステージ目を突破すると、GAME CLEAR の後にご褒美画像が表示されます。</li>
+    </ul>
+  </main>
+</body>
+</html>
