@@ -5,7 +5,8 @@
 
 ## 遊ぶ
 
-- GitHub Pages: https://koide-takeshi.github.io/make_autochess/
+- ゲーム本編: https://koide-takeshi.github.io/make_autochess/
+- ルール説明: https://koide-takeshi.github.io/make_autochess/rules.html
 - ローカルで遊ぶ場合: `index.html` をブラウザで開いてください。
 
 ## 内容
@@ -28,7 +29,7 @@
 5. ガチャ、売却、配置変更、レベルアップ、属性相性を使って次のステージに備えます。
 6. 5ステージ目を突破するとゲームクリアです。クリア後にはご褒美画像が表示されます。
 
-詳しいルールは [ルール説明.html](ルール説明.html) にまとめています。
+詳しいルールは [ルール説明](https://koide-takeshi.github.io/make_autochess/rules.html) にまとめています。
 
 ## 操作
 
@@ -45,6 +46,6 @@
 ## ファイル構成
 
 - `index.html`: ゲーム本体
-- `ルール説明.html`: ルール説明ページ
+- `rules.html`: ルール説明ページ
 - `制作期間.md`: 制作期間と主な作業内容
 - `assets/`: 駒、敵、属性、背景、ご褒美画像
