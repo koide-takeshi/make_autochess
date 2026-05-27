@@ -300,20 +300,6 @@
       cursor: pointer;
     }
 
-    .clear-banner.reward-mode {
-      width: min(94%, 728px);
-    }
-
-    .reward-image {
-      width: 100%;
-      max-height: min(83vh, 611px);
-      display: block;
-      border: 2px solid rgba(255, 227, 154, .72);
-      border-radius: 8px;
-      object-fit: contain;
-      background: rgba(244, 241, 231, .08);
-    }
-
     .enemy-preview {
       position: absolute;
       top: 14px;
@@ -1443,7 +1429,6 @@
     let enemyElements;
     let gachaLeft;
     let endState;
-    let rewardTimer;
 
     function enemy(id, name, icon, hp, atk, range, speed, element, x, y) {
       return { id, name, icon, hp, atk, range, speed, element, x, y, tone: elementTones[element] || "#df7069", trait: "敵", art: enemyArtById[id] };
@@ -1466,7 +1451,6 @@
     }
 
     function newRun() {
-      clearTimeout(rewardTimer);
       gold = 5;
       life = 3;
       stageIndex = 0;
@@ -1502,7 +1486,6 @@
       });
       logs.unshift(`${type.name}★が初期配置`);
     }
-
 
     function drawGacha(logLine) {
       if (gachaLeft > 0) {
@@ -1787,12 +1770,7 @@
           phase = "won";
           logs.unshift("勝利");
           logs.unshift("全ステージクリア");
-          rewardTimer = setTimeout(() => {
-            if (phase === "won") {
-              endState = "reward";
-              render();
-            }
-          }, 1300);
+
         } else {
           gold += reward;
           stageIndex += 1;
@@ -1931,15 +1909,12 @@
 
     function renderEndOverlay() {
       clearBannerEl.classList.toggle("show", Boolean(endState));
-      clearBannerEl.classList.toggle("reward-mode", endState === "reward");
       if (endState === "win") {
         clearBannerEl.textContent = "WIN";
       } else if (endState === "lose") {
         clearBannerEl.textContent = "LOSE";
       } else if (endState === "clear") {
         clearBannerEl.textContent = "GAME CLEAR!";
-      } else if (endState === "reward") {
-        clearBannerEl.innerHTML = `<img class="reward-image" src="assets/tertet.png" alt="ご褒美画像">`;
       } else if (endState === "gameover") {
         clearBannerEl.textContent = "GAME OVER";
       } else {
@@ -2189,7 +2164,7 @@
       newRun();
     });
     clearBannerEl.addEventListener("click", () => {
-      if (phase === "gameover" || endState === "reward") {
+      if (phase === "gameover" || phase === "won") {
         clearInterval(timer);
         newRun();
       }
@@ -2199,3 +2174,4 @@
   </script>
 </body>
 </html>
+
